@@ -43,18 +43,21 @@ public class DataTools
     }
 
     private string excelDirectoryPath = string.Empty;
-    private string cloudDirectoryPath = string.Empty;
     private string commonEnumPath = string.Empty;
     private string clientJsonPath = string.Empty;
     private string serverJsonPath = string.Empty;
-    private string cloudJsonPath = string.Empty;
     private string clientVersionJsonPath = string.Empty;
     private string serverVersionJsonPath = string.Empty;
     private string clientTempletPath = string.Empty;
     private string clientTempletResultPath = string.Empty;
-    private string cloudTempletResultPath = string.Empty;
     private string clientTempletUtilityResultPath = string.Empty;
     private string clientTempletEnumResultPath = string.Empty;
+#if CLOUD
+    private string cloudDirectoryPath = string.Empty;
+    private string cloudJsonPath = string.Empty;
+    private string cloudTempletResultPath = string.Empty;
+#endif
+
     private HashSet<string> includeTypes = new HashSet<string>    // 지정 가능한 타입들
         {
             "enum",
@@ -109,19 +112,17 @@ public class DataTools
     private void SetPath()
     {
         excelDirectoryPath = Application.dataPath.Replace("/Assets", "/Table");
+
+#if CLOUD
         cloudDirectoryPath = Application.dataPath.Replace("/Assets", "/CloudCode/Project/Table");
-
-        // CommonEnum.cs 경로
-        commonEnumPath = $"{Application.dataPath}/Scripts/Common/Enum/CommonEnum.cs";
-
+        cloudJsonPath = $"{cloudDirectoryPath}";
+        cloudTempletResultPath = $"{cloudDirectoryPath}/Data/";
+#endif
         // clientJson 파일 경로
         clientJsonPath = $"{excelDirectoryPath}/ClientJson/";
 
         // serverJson 파일 경로
         serverJsonPath = $"{excelDirectoryPath}/ServerJson/";
-
-        // cloudJson 파일 경로 (cs)
-        cloudJsonPath = $"{cloudDirectoryPath}";
 
         // clientVersionJson 파일 경로
         clientVersionJsonPath = $"{excelDirectoryPath}/ClientJson/";
@@ -134,13 +135,79 @@ public class DataTools
 
         // 클라이언트 템플릿 cs파일 제너레이트 결과 경로
         clientTempletResultPath = $"{Application.dataPath}/Scripts/Common/Table/Data/";
-
-        // 클라우드 템플릿 cs파일 제너레이트 결과 경로
-        cloudTempletResultPath = $"{cloudDirectoryPath}/Data/";
-
-
         clientTempletUtilityResultPath = $"{Application.dataPath}/Scripts/Common/Table/Utility/";
         clientTempletEnumResultPath = $"{Application.dataPath}/Scripts/Common/Table/Enum/";
+
+        // CommonEnum.cs 경로
+        commonEnumPath = $"{Application.dataPath}/Scripts/Common/Enum/CommonEnum.cs";
+
+        EnsureDirectory(clientTempletResultPath);
+        EnsureDirectory(clientTempletUtilityResultPath);
+        EnsureDirectory(clientTempletEnumResultPath);
+        EnsureFileWithDirectory(commonEnumPath, GetDefaultCommonEnumContent());
+    }
+
+    private void EnsureDirectory(string directoryPath)
+    {
+        if (string.IsNullOrWhiteSpace(directoryPath))
+            throw new System.ArgumentException("directoryPath is null/empty.");
+
+        if (!Directory.Exists(directoryPath))
+            Directory.CreateDirectory(directoryPath);
+    }
+
+    private void EnsureFileWithDirectory(string filePath, string fileContentIfCreate)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            throw new System.ArgumentException("filePath is null/empty.");
+
+        // 파일이 들어갈 상위 폴더 보장
+        string? dir = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(dir))
+            EnsureDirectory(dir);
+
+        // 파일 없으면 생성
+        if (!File.Exists(filePath))
+        {
+            // 상위 폴더가 존재하는 상태에서 파일 생성
+            File.WriteAllText(filePath, fileContentIfCreate ?? string.Empty);
+        }
+    }
+
+    private string GetDefaultCommonEnumContent()
+    {
+        return
+@"#region Common
+public enum VisibleState
+{
+    None = -1,
+    Live,
+}
+
+#endregion
+
+#region Character
+public enum CharacterType
+{
+    None = -1,
+}
+
+#endregion
+
+#region Item
+public enum ItemType
+{
+    None = -1,
+}
+#endregion
+
+#region Currency
+public enum CurrencyType
+{
+    None = -1,
+}
+#endregion
+";
     }
 
     /// <summary>
@@ -1093,6 +1160,7 @@ public class DataTools
                 System.IO.File.WriteAllText($"{serverJsonPath}/{json.Key}.json", jsonfile.Trim());
             }
 
+#if CLOUD
             // 클라우드 데이터
             StringBuilder cloudValueData = new StringBuilder();
             StringBuilder cloudPropertyData = new StringBuilder();
@@ -1116,7 +1184,7 @@ public class DataTools
             tableTemplateCode = tableTemplateCode.Replace("#VALUES#", cloudValueData.ToString());
 
             System.IO.File.WriteAllText($"{cloudJsonPath}/CloudTable.cs", tableTemplateCode);
-
+#endif
             // 클라 DataVersion json 파일
             string clientVersionPath = $"{clientVersionJsonPath}/DataVersion.json";
             if (!System.IO.File.Exists(clientVersionPath))
@@ -1406,7 +1474,10 @@ public class DataTools
 
                 generate(tableTemplateCode, $"{excel.Key}Table.cs", clientTempletResultPath);
                 generate(tableDataTemplateCode, $"{excel.Key}TableData.cs", clientTempletResultPath);
+
+#if CLOUD
                 generate(tableDataTemplateCode, $"{excel.Key}TableData.cs", cloudTempletResultPath);
+#endif
             }
         }
         catch (System.Exception e)
@@ -1459,7 +1530,7 @@ public class DataTools
                     var enumId = colEnumId.value[0][0].Replace('-', '_');
 
                     if (enumValuesBuilder.Length > 0)
-                        enumValuesBuilder.Append($",\r\t\t");
+                        enumValuesBuilder.Append($",\r\t");
                     enumValuesBuilder.Append($"{enumId} = {colId.value[0][0]}");
 
                     if (enumEditorValuesBuilder.Length > 0)
@@ -1480,7 +1551,9 @@ public class DataTools
                 };
 
                 generate(tableTemplateCode, $"{excel.Key}TableDefine.cs", clientTempletResultPath);
+#if CLOUD
                 generate(tableTemplateCode, $"{excel.Key}TableDefine.cs", cloudTempletResultPath);
+#endif
             }
         }
         catch (System.Exception e)
