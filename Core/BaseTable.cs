@@ -10,7 +10,7 @@ public abstract class BaseTable<Data> : ITable where Data : IBaseTableData
 
     public void LoadTable(string localPath)
     {
-        tableDatas = ConvenienceModel.Json.FromJsonArray<Data>(System.IO.File.ReadAllText(localPath + FilePath + ".json"));
+        tableDatas = FromJsonArray(System.IO.File.ReadAllText(localPath + FilePath + ".json"));
         tableDataDic = new Dictionary<int, Data>(tableDatas.Length);
         tableEnumIdDic = new Dictionary<string, Data>(tableDatas.Length);
 
@@ -65,5 +65,23 @@ public abstract class BaseTable<Data> : ITable where Data : IBaseTableData
     public int GetDataTotalCount()
     {
         return tableDatas.Length;
+    }
+
+    private Data[] FromJsonArray(string json)
+    {
+        Data[] parsing = null;
+
+        try
+        {
+            parsing = Newtonsoft.Json.JsonConvert.DeserializeObject<Data[]>(json);
+        }
+        catch (System.Exception e)
+        {
+            IronJade.Debug.LogError($"Parsing Error!!! => [{typeof(Data).Name}]{json}");
+            IronJade.Debug.LogError(e);
+            throw e;
+        }
+
+        return parsing;
     }
 }
