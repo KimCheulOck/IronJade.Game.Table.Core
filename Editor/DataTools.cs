@@ -831,6 +831,19 @@ public enum CurrencyType
                                         {
                                             for (int k = 0; k < colData.type.value.Count; ++k)
                                             {
+                                                if (!commonEnum.ContainsKey(colData.type.value[k]))
+                                                {
+                                                    StringBuilder sb = new StringBuilder();
+                                                    sb.AppendLine("1) CommonEnum에 없는 타입 값입니다.");
+                                                    sb.AppendLine($"현재 Excel : {excel.Key}");
+                                                    sb.AppendLine($"현재 Row : {row.Key + 1}");
+                                                    sb.AppendLine($"현재 Col : {NumberToAlphabet(col.Key)}");
+                                                    sb.AppendLine($"현재 Type : {colData.type.name}");
+                                                    sb.AppendLine($"현재 CommonEnum Type : {colData.type.value[k]}");
+                                                    await ShowMessage(sb.ToString());
+                                                    return false;
+                                                }
+
                                                 if (commonEnum[colData.type.value[k]].ContainsKey(colData.value[i][j]))
                                                 {
                                                     list.Add(commonEnum[colData.type.value[k]][colData.value[i][j]]);
@@ -853,6 +866,19 @@ public enum CurrencyType
                                         {
                                             for (int k = 0; k < colData.type.value.Count; ++k)
                                             {
+                                                if (!commonEnum.ContainsKey(colData.type.value[k]))
+                                                {
+                                                    StringBuilder sb = new StringBuilder();
+                                                    sb.AppendLine("1) CommonEnum에 없는 타입 값입니다.");
+                                                    sb.AppendLine($"현재 Excel : {excel.Key}");
+                                                    sb.AppendLine($"현재 Row : {row.Key + 1}");
+                                                    sb.AppendLine($"현재 Col : {NumberToAlphabet(col.Key)}");
+                                                    sb.AppendLine($"현재 Type : {colData.type.name}");
+                                                    sb.AppendLine($"현재 CommonEnum Type : {colData.type.value[k]}");
+                                                    await ShowMessage(sb.ToString());
+                                                    return false;
+                                                }
+
                                                 if (commonEnum[colData.type.value[k]].ContainsKey(colData.value[i][j]))
                                                 {
                                                     if (!colData.include.Equals("S"))
