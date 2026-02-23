@@ -176,38 +176,38 @@ public class DataTools
 
     private string GetDefaultCommonEnumContent()
     {
-        return
-@"#region Common
-public enum VisibleState
-{
-    None = -1,
-    Live,
-}
+        return "";
+        //@"#region Common
+        //public enum VisibleState
+        //{
+        //    None = -1,
+        //    Live,
+        //}
 
-#endregion
+        //#endregion
 
-#region Character
-public enum CharacterType
-{
-    None = -1,
-}
+        //#region Character
+        //public enum CharacterType
+        //{
+        //    None = -1,
+        //}
 
-#endregion
+        //#endregion
 
-#region Item
-public enum ItemType
-{
-    None = -1,
-}
-#endregion
+        //#region Item
+        //public enum ItemType
+        //{
+        //    None = -1,
+        //}
+        //#endregion
 
-#region Currency
-public enum CurrencyType
-{
-    None = -1,
-}
-#endregion
-";
+        //#region Currency
+        //public enum CurrencyType
+        //{
+        //    None = -1,
+        //}
+        //#endregion
+        //";
     }
 
     /// <summary>
