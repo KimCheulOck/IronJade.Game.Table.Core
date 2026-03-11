@@ -556,7 +556,7 @@ public class DataTools
                                         sb.AppendLine($"현재 Sheet : {table.TableName}");
                                         sb.AppendLine($"현재 Row : {row + 1}");
                                         sb.AppendLine($"현재 ENUM_ID : {enumId}");
-                                        sb.Append($"겹치는 Excel : {checkExcelEnumIds[table.TableName]}");
+                                        sb.Append($"겹치는 Excel : {table.TableName}");
                                         await ShowMessage(sb.ToString());
                                         return false;
                                     }
@@ -692,6 +692,34 @@ public class DataTools
                                     }
 
                                     sb.Append($"찾으려는 CommonEnum : {sb2.ToString()}");
+                                    await ShowMessage(sb.ToString());
+                                    return false;
+                                }
+
+                                Debug.Log($"[{i}][{j}]");
+                                Debug.Log($"colData.value: {colData.value[i][j]}");
+                                Debug.Log($"allExcelEnumIdDatas[i][j].Count: {allExcelEnumIdDatas[colData.value[i][j]].Count}");
+                                Debug.Log($"allExcelEnumIdDatas[colData.value[i][j]][(int)ColType.State]: {allExcelEnumIdDatas[colData.value[i][j]][(int)ColType.State]}");
+                                Debug.Log($"allExcelEnumIdDatas[colData.value[i][j]][(int)ColType.State].value.Count: {allExcelEnumIdDatas[colData.value[i][j]][(int)ColType.State].value.Count}");
+
+                                if (allExcelEnumIdDatas[colData.value[i][j]][(int)ColType.State].value.Count == 0 ||
+                                    allExcelEnumIdDatas[colData.value[i][j]][(int)ColType.State].value[0].Count == 0)
+                                {
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.AppendLine("참조 중인 데이터에 빈 값이 있습니다.");
+                                    sb.AppendLine($"현재 Excel : {excel.Key}");
+                                    sb.AppendLine($"현재 Row : {row.Key + 1}");
+                                    sb.AppendLine($"현재 Col : {NumberToAlphabet(col.Key)}");
+                                    sb.AppendLine($"현재 Value : {colData.value[i][j]}");
+
+                                    StringBuilder sb2 = new StringBuilder();
+                                    for (int k = 0; k < colData.type.value.Count; ++k)
+                                    {
+                                        if (sb2.Length > 0)
+                                            sb2.Append(',');
+
+                                        sb2.Append(colData.type.value[k]);
+                                    }
                                     await ShowMessage(sb.ToString());
                                     return false;
                                 }
@@ -1319,6 +1347,10 @@ public class DataTools
             StringBuilder loadTableBuilder = new StringBuilder();
             StringBuilder getString1ValuesBuilder = new StringBuilder();
             StringBuilder getString2ValuesBuilder = new StringBuilder();
+            StringBuilder publicValuesBuilder = new StringBuilder();
+            StringBuilder pravteValuesBuilder = new StringBuilder();
+            StringBuilder propertyValues = new StringBuilder();
+            StringBuilder deserializeValues = new StringBuilder();
 
             List<string> languageType = new List<string>();
 
@@ -1334,6 +1366,30 @@ public class DataTools
 
                 string tableTemplateCode = File.ReadAllText($"{clientTempletPath}Localization.txt");
                 string tableDataTemplateCode = File.ReadAllText($"{clientTempletPath}LocalizationTable.txt");
+                string tableTemplateCode2 = File.ReadAllText($"{clientTempletPath}Table.txt");
+                string tableDataTemplateCode2 = File.ReadAllText($"{clientTempletPath}TableData.txt");
+
+                System.Action<string, string> generate = (templateCode, fileName) =>
+                {
+                    // 변수
+                    templateCode = templateCode.Replace("#VALUES#", valuesBuilder.ToString());
+                    templateCode = templateCode.Replace("#VALUES1#", loadTableBuilder.ToString());
+                    templateCode = templateCode.Replace("#VALUES2#", getString1ValuesBuilder.ToString());
+                    templateCode = templateCode.Replace("#VALUES3#", getString2ValuesBuilder.ToString());
+
+                    File.WriteAllText($"{clientTempletResultPath}{fileName}", templateCode);
+                };
+
+                System.Action<string, string, string, string> generate2 = (templateCode, scriptName, fileName, result) =>
+                {
+                    // 스크립트 이름
+                    templateCode = templateCode.Replace("#SCRIPTNAME#", scriptName);
+
+                    // 변수
+                    templateCode = templateCode.Replace("#VALUES#", publicValuesBuilder.ToString());
+
+                    File.WriteAllText($"{result}{fileName}", templateCode, Encoding.UTF8);
+                };
 
                 foreach (var row in excel.Value)
                 {
@@ -1362,38 +1418,38 @@ public class DataTools
                             valuesBuilder.Append($",\r\t\t\t");
                         valuesBuilder.Append(caseLanguage);
 
+                        if (loadTableBuilder.Length > 0)
+                            loadTableBuilder.Append("\r\t\t\t");
                         loadTableBuilder.Append($"case Localization.LanguageType.{caseLanguage}:\r\t\t\t\t\t{{\r\t\t\t\t\t\ttable = new Localization_{language}Table();");
-                        loadTableBuilder.Append($"\r\t\t\t\t\t\ttable.LoadTable(UtilModel.Resources.LoadTextAsset(json + table.FileName));");
-                        loadTableBuilder.Append($"\r\t\t\t\t\t\tbreak;\r\t\t\t\t\t}}\r\r\t\t\t\t\t");
+                        loadTableBuilder.Append($"\r\t\t\t\t\t\ttable.LoadTable(localPath);");
+                        loadTableBuilder.Append($"\r\t\t\t\t\t\tbreak;\r\t\t\t\t\t}}");
 
+                        if (getString1ValuesBuilder.Length > 0)
+                            getString1ValuesBuilder.Append("\r\t\t\t");
                         getString1ValuesBuilder.Append($"case Localization.LanguageType.{caseLanguage}:\r\t\t\t\t{{\r\t\t\t\t\t");
-                        getString1ValuesBuilder.Append($"Localization_{language}Table localization = ((Localization_{language}Table)table;");
+                        getString1ValuesBuilder.Append($"Localization_{language}Table localization = (Localization_{language}Table)table;");
                         getString1ValuesBuilder.Append($"\r\t\t\t\t\tif (localization == null)\r\t\t\t\t\t\treturn string.Empty;");
-                        getString1ValuesBuilder.Append($"\r\r\t\t\t\t\treturn localization.GetDataByID(id).GetVALUE();\r\t\t\t\t}}\r\r\t\t\t\t");
+                        getString1ValuesBuilder.Append($"\r\r\t\t\t\t\treturn localization.GetDataByID(id).VALUE;\r\t\t\t\t}}");
 
+                        if (getString2ValuesBuilder.Length > 0)
+                            getString2ValuesBuilder.Append("\r\t\t\t");
                         getString2ValuesBuilder.Append($"case Localization.LanguageType.{caseLanguage}:\r\t\t\t\t{{\r\t\t\t\t\t");
-                        getString2ValuesBuilder.Append($"Localization_{language}Table localization = ((Localization_{language}Table)table;");
+                        getString2ValuesBuilder.Append($"Localization_{language}Table localization = (Localization_{language}Table)table;");
                         getString2ValuesBuilder.Append($"\r\t\t\t\t\tif (localization == null)\r\t\t\t\t\t\treturn string.Empty;");
-                        getString2ValuesBuilder.Append($"\r\r\t\t\t\t\treturn localization.GetDataByEnumId(enumId).GetVALUE();\r\t\t\t\t}}\r\r\t\t\t\t");
+                        getString2ValuesBuilder.Append($"\r\r\t\t\t\t\treturn localization.GetDataByEnumId(enumId).VALUE;\r\t\t\t\t}}");
+
+                        publicValuesBuilder.Clear();
+                        publicValuesBuilder.Append($"public string VALUE;");
+
+                        generate2(tableTemplateCode2, $"{excel.Key}_{colData.name.ToLower()}", $"{excel.Key}_{colData.name.ToLower()}Table.cs", clientTempletResultPath);
+                        generate2(tableDataTemplateCode2, $"{excel.Key}_{colData.name.ToLower()}", $"{excel.Key}_{colData.name.ToLower()}TableData.cs", clientTempletResultPath);
                     }
 
                     break;
                 }
 
-                System.Action<string, string> generate = (templateCode, fileName) =>
-                {
-                    // 변수
-                    templateCode = templateCode.Replace("#VALUES#", valuesBuilder.ToString());
-                    templateCode = templateCode.Replace("#VALUES1#", loadTableBuilder.ToString());
-                    templateCode = templateCode.Replace("#VALUES2#", getString1ValuesBuilder.ToString());
-                    templateCode = templateCode.Replace("#VALUES3#", getString2ValuesBuilder.ToString());
-
-                    File.WriteAllText($"{clientTempletResultPath}{fileName}", templateCode);
-                };
-
                 generate(tableTemplateCode, $"Localization.cs");
                 generate(tableDataTemplateCode, $"LocalizationTable.cs");
-
                 break;
             }
         }
