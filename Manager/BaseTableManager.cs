@@ -11,8 +11,12 @@ public class BaseTableManager
         {
             if (localPath == null)
             {
+#if UNITY_EDITOR
                 string devicePath = Application.dataPath.Replace("/Assets", "");
                 localPath = $"{devicePath}/Table/ClientJson/";
+#else
+                localPath = $"{Application.streamingAssetsPath}/Table/ClientJson/";
+#endif
             }
 
             return localPath;
